@@ -41,6 +41,7 @@
         app.getSchedule(key, label);
         app.selectedTimetables.push({key: key, label: label});
         app.toggleAddDialog(false);
+        app.saveStationList(app.selectedTimetables);
     });
 
     document.getElementById('butAddCancel').addEventListener('click', function () {
@@ -111,7 +112,7 @@
 
 
     app.getSchedule = function (key, label) {
-        var url = 'https://api-ratp.pierre-grimaud.fr/v3/schedules/' + key;
+        var url = 'https://api-ratp.pierre-grimaud.fr/v4/schedules/' + key;
 
         var request = new XMLHttpRequest();
         request.onreadystatechange = function () {
@@ -159,15 +160,42 @@
             },
             {
                 message: '2 mn'
-            },
-            {
-                message: '5 mn'
             }
         ]
 
 
     };
 
+    app.saveStationList = function (stations) {
+        const data = JSON.stringify(stations);
+        localStorage.setItem('stationList', data);
+    };
+
+    app.loadMetrosList = function () {
+        let stations = localStorage.getItem('stationList');
+        if (stations) {
+            try {
+                stations = JSON.parse(stations);
+            } catch (ex) {
+                stations = {};
+            }
+        }
+        if (!stations || Object.keys(stations).length === 0) {
+            stations = [{key: initialStationTimetable.key, label: initialStationTimetable.label}];
+        }
+        return stations;
+    };
+
+    app.init = function () {
+       //app.getSchedule('metros/1/bastille/A', 'Bastille, Direction La Défense');
+        app.selectedTimetables = app.loadMetrosList();
+        //var keys = Object.length(app.selectedTimetables);
+        app.selectedTimetables.forEach(function (key) {
+            var card = app.visibleCards[key];
+            app.visibleCards[key] = card;
+        });
+        app.updateSchedules();
+    };
 
     /************************************************************************
      *
@@ -179,9 +207,5 @@
      *   Instead, check out IDB (https://www.npmjs.com/package/idb) or
      *   SimpleDB (https://gist.github.com/inexorabletash/c8069c042b734519680c)
      ************************************************************************/
-
-    app.getSchedule('metros/1/bastille/A', 'Bastille, Direction La Défense');
-    app.selectedTimetables = [
-        {key: initialStationTimetable.key, label: initialStationTimetable.label}
-    ];
+    app.init();
 })();
